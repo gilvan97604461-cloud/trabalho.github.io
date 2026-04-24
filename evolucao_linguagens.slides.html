@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="slides-format" content="viewport">
+    <title>Evolução das Linguagens de Programação</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+        @theme {
+            --color-bg: #0d1117;
+            --color-bg-deep: #020617;
+            --color-surface: #161b22;
+            --color-text: #e6edf3;
+            --color-text-secondary: #8b949e;
+            --color-text-muted: #6e7681;
+            --color-accent-1: #58a6ff;
+            --color-accent-2: #79c0ff;
+            --color-accent-3: #f78166;
+            --color-glass-bg: rgba(255,255,255,0.05);
+            --color-glass-border: rgba(255,255,255,0.08);
+            --color-vignette: rgba(0,0,0,0.5);
+            --font-display: 'Playfair Display', serif;
+            --font-body: 'DM Sans', sans-serif;
+        }
+    </style>
+    <style>
+        :root { --color-bg: #0d1117; --color-text: #e6edf3; --glow-color-rgb: 88,166,255; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { background: var(--color-bg); margin: 0; }
+        body { font-family: 'DM Sans', sans-serif; color: var(--color-text); overflow: hidden; height: 100vh; width: 100vw; }
+        .deck { width: 100vw; height: 100vh; position: relative; }
+        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--color-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.95); transition: opacity 0.7s ease, transform 0.7s ease; pointer-events: none; overflow: hidden; }
+        .slide.active { opacity: 1; transform: scale(1); pointer-events: all; }
+        .slide > .content { position: relative; z-index: 2; width: 100%; max-width: 1100px; padding: clamp(1.5rem, 4vw, 4rem); }
+        .nav-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; z-index: 100; background: rgba(255,255,255,0.04); backdrop-filter: blur(10px); padding: 8px 20px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.08); }
+        .nav-btn { width: 36px; height: 36px; border: none; background: rgba(255,255,255,0.05); color: #58a6ff; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+        .nav-btn:hover { background: rgba(88,166,255,0.15); }
+        .slide-dots { display: flex; gap: 8px; }
+        .slide-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); cursor: pointer; transition: background 0.3s, transform 0.3s; }
+        .slide-dots .dot.active { background: #58a6ff; transform: scale(1.3); }
+        .slide-counter { font-size: 0.75rem; color: #6e7681; min-width: 36px; text-align: center; }
+        .reveal { opacity: 0; transform: translateY(20px); }
+        .text-glow { text-shadow: 0 0 20px rgba(88,166,255,0.5), 0 0 40px rgba(88,166,255,0.2); }
+        .stat-glow { text-shadow: 0 0 30px rgba(88,166,255,0.6), 0 0 60px rgba(88,166,255,0.25); }
+        @keyframes float-slow { 0%{transform:translate(0,0) scale(1);} 25%{transform:translate(60px,-50px) scale(1.12);} 50%{transform:translate(-40px,40px) scale(0.9);} 75%{transform:translate(50px,20px) scale(1.08);} 100%{transform:translate(0,0) scale(1);} }
+        @keyframes float-drift { 0%{transform:translate(0,0) scale(1) rotate(0deg);} 33%{transform:translate(-50px,-60px) scale(1.15) rotate(3deg);} 66%{transform:translate(40px,30px) scale(0.88) rotate(-2deg);} 100%{transform:translate(0,0) scale(1) rotate(0deg);} }
+        @keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-15px);} }
+        @keyframes glow-pulse { 0%,100%{text-shadow:0 0 20px rgba(88,166,255,0.5),0 0 40px rgba(88,166,255,0.2);} 50%{text-shadow:0 0 30px rgba(88,166,255,0.8),0 0 60px rgba(88,166,255,0.3);} }
+        .glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+        .gradient-mesh { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); animation: float-slow 10s ease-in-out infinite; }
+        .blob:nth-child(2) { animation: float-drift 14s ease-in-out infinite; }
+        .blob:nth-child(3) { animation: float-slow 18s ease-in-out infinite reverse; }
+        .slide::before { content:''; position:absolute; inset:0; z-index:1; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); background-repeat:repeat; background-size:256px 256px; opacity:0.03; mix-blend-mode:overlay; }
+        .slide::after { content:''; position:absolute; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse at center, transparent 50%, var(--color-vignette) 100%); }
+        .bar-fill { border-radius: 4px; height: 100%; transition: width 0.8s ease; }
+        .bar-track { background: rgba(255,255,255,0.05); border-radius: 4px; height: 10px; overflow: hidden; }
+        .timeline-line { position: absolute; left: 18px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #58a6ff, #f78166); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: #58a6ff; box-shadow: 0 0 10px rgba(88,166,255,0.6); flex-shrink: 0; }
+    </style>
+</head>
+<body>
+<div class="mouse-spotlight" style="position:fixed;inset:0;z-index:99;pointer-events:none;"></div>
+<div class="deck">
+
+<!-- SLIDE 1: TÍTULO -->
+<div class="slide active" data-slide="1">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:500px;height:500px;top:-120px;right:-100px;background:#58a6ff;opacity:0.12;"></div>
+        <div class="blob" style="width:350px;height:350px;bottom:-80px;left:-80px;background:#f78166;opacity:0.10;"></div>
+        <div class="blob" style="width:250px;height:250px;top:40%;left:15%;background:#79c0ff;opacity:0.08;"></div>
+    </div>
+    <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+    <div class="content text-center">
+        <div style="font-size:96px;margin-bottom:1rem;animation:float 3s ease-in-out infinite;" class="reveal">💻</div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,4rem);font-weight:900;background:linear-gradient(135deg,#58a6ff,#79c0ff,#f78166);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1rem;line-height:1.1;" class="reveal">Evolução das Linguagens<br>de Programação</div>
+        <p style="font-size:clamp(0.85rem,1.3vw,1.1rem);color:#6e7681;letter-spacing:6px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">De FORTRAN/COBOL a Java, Python, Go e Rust</p>
+        <p style="font-size:0.9rem;color:#8b949e;margin-top:1.5rem;" class="reveal">T2 — Sistemas, Linguagens e Sociedade · 2026</p>
+    </div>
+</div>
+
+<!-- SLIDE 2: INTRODUÇÃO / PERGUNTA-PROBLEMA -->
+<div class="slide" data-slide="2">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:400px;height:400px;top:-80px;right:-80px;background:#58a6ff;opacity:0.07;"></div>
+        <div class="blob" style="width:280px;height:280px;bottom:-60px;left:-40px;background:#f78166;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#58a6ff;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Introdução</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;margin-bottom:1.5rem;line-height:1.2;" class="reveal">Por que linguagens de programação importam?</h2>
+        <div style="background:rgba(88,166,255,0.08);border-left:4px solid #58a6ff;border-radius:8px;padding:1.2rem 1.5rem;margin-bottom:1.5rem;" class="reveal">
+            <p style="font-size:1.05rem;font-style:italic;color:#79c0ff;margin:0;">"Como o desenvolvimento e a criação de novas linguagens influenciam o mercado de trabalho e as linguagens pré-existentes?"</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;" class="reveal">
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.2rem;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">⚙️</div>
+                <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.3rem;">Técnica</div>
+                <div style="font-size:0.75rem;color:#8b949e;">Quais trade-offs cada linguagem resolve?</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.2rem;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">💼</div>
+                <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.3rem;">Econômica</div>
+                <div style="font-size:0.75rem;color:#8b949e;">Como o mercado absorve novas linguagens?</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.2rem;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">🌎</div>
+                <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.3rem;">Social</div>
+                <div style="font-size:0.75rem;color:#8b949e;">Quem ganha e perde com cada transição?</div>
+            </div>
+        </div>
+        <p style="font-size:0.85rem;color:#8b949e;margin-top:1rem;" class="reveal">📊 Brasil: déficit projetado de <strong style="color:#f78166;">530 mil</strong> profissionais de TI até 2026 (Brasscom)</p>
+    </div>
+</div>
+
+<!-- SLIDE 3: LINHA DO TEMPO -->
+<div class="slide" data-slide="3">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:400px;height:400px;top:-100px;left:-80px;background:#58a6ff;opacity:0.07;"></div>
+        <div class="blob" style="width:300px;height:300px;bottom:-60px;right:-40px;background:#f78166;opacity:0.06;"></div>
+    </div>
+    <canvas class="particle-canvas-ambient" style="position:absolute;inset:0;z-index:1;"></canvas>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#58a6ff;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Fundamentação Histórica</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;margin-bottom:1.5rem;" class="reveal">Linha do Tempo: 70 anos de linguagens</h2>
+        <div style="position:relative;padding-left:3rem;" class="reveal">
+            <div class="timeline-line"></div>
+            <div style="display:flex;flex-direction:column;gap:0.9rem;">
+                <div style="display:flex;align-items:flex-start;gap:1rem;">
+                    <div class="timeline-dot" style="margin-top:3px;background:#58a6ff;"></div>
+                    <div><span style="color:#58a6ff;font-weight:700;font-size:0.85rem;">1957–1960</span> <span style="font-size:0.9rem;"> FORTRAN (IBM, John Backus) · COBOL (Grace Hopper) · LISP — primeiras linguagens de alto nível</span></div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:1rem;">
+                    <div class="timeline-dot" style="margin-top:3px;background:#79c0ff;"></div>
+                    <div><span style="color:#79c0ff;font-weight:700;font-size:0.85rem;">1972</span> <span style="font-size:0.9rem;"> C (Dennis Ritchie, Bell Labs) — base de todo o software moderno de sistemas + Unix</span></div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:1rem;">
+                    <div class="timeline-dot" style="margin-top:3px;background:#a5d6ff;"></div>
+                    <div><span style="color:#a5d6ff;font-weight:700;font-size:0.85rem;">1985–1991</span> <span style="font-size:0.9rem;"> C++ (OOP) · Python (Guido van Rossum) — produtividade e orientação a objetos</span></div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:1rem;">
+                    <div class="timeline-dot" style="margin-top:3px;background:#f0883e;"></div>
+                    <div><span style="color:#f0883e;font-weight:700;font-size:0.85rem;">1995</span> <span style="font-size:0.9rem;"> Java (Sun, "write once run anywhere") · JavaScript (Brendan Eich, 10 dias!) · PHP — explosão da web</span></div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:1rem;">
+                    <div class="timeline-dot" style="margin-top:3px;background:#f78166;"></div>
+                    <div><span style="color:#f78166;font-weight:700;font-size:0.85rem;">2009–2015</span> <span style="font-size:0.9rem;"> Go (Google, concorrência simples) · Rust (Mozilla, segurança sem GC) — era do cloud e sistemas seguros</span></div>
+                </div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.8rem;margin-top:1.2rem;" class="reveal">
+            <div style="background:rgba(88,166,255,0.08);border-radius:8px;padding:0.7rem;text-align:center;font-size:0.75rem;"><strong style="color:#58a6ff;">Geração 1</strong><br>Máquina/Assembly</div>
+            <div style="background:rgba(88,166,255,0.08);border-radius:8px;padding:0.7rem;text-align:center;font-size:0.75rem;"><strong style="color:#79c0ff;">Geração 2</strong><br>Alto nível (FORTRAN)</div>
+            <div style="background:rgba(247,129,102,0.08);border-radius:8px;padding:0.7rem;text-align:center;font-size:0.75rem;"><strong style="color:#f0883e;">Geração 3–4</strong><br>OOP + Web</div>
+            <div style="background:rgba(247,129,102,0.12);border-radius:8px;padding:0.7rem;text-align:center;font-size:0.75rem;"><strong style="color:#f78166;">Geração 5</strong><br>Cloud + Segurança</div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 4: PARADIGMAS -->
+<div class="slide" data-slide="4">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:450px;height:450px;top:-100px;right:-80px;background:#f78166;opacity:0.08;"></div>
+        <div class="blob" style="width:300px;height:300px;bottom:-60px;left:-40px;background:#58a6ff;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#58a6ff;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Evolução das Linguagens</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;margin-bottom:1.2rem;" class="reveal">Os 5 Grandes Paradigmas</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="reveal">
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(88,166,255,0.2);border-radius:12px;padding:1.2rem;">
+                <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
+                    <span style="font-size:1.4rem;">📋</span>
+                    <strong style="color:#58a6ff;">Procedural / Imperativo</strong>
+                </div>
+                <p style="font-size:0.82rem;color:#8b949e;margin:0;">Sequência de instruções que modificam estado. Unidade: rotina/função. Exemplos: <em>FORTRAN, COBOL, C</em></p>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(121,192,255,0.2);border-radius:12px;padding:1.2rem;">
+                <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
+                    <span style="font-size:1.4rem;">🧱</span>
+                    <strong style="color:#79c0ff;">Orientado a Objetos</strong>
+                </div>
+                <p style="font-size:0.82rem;color:#8b949e;margin:0;">Objetos com dados e comportamentos. Encapsulamento, herança, polimorfismo. Exemplos: <em>Java, Python, C++</em></p>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(247,129,102,0.2);border-radius:12px;padding:1.2rem;">
+                <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
+                    <span style="font-size:1.4rem;">λ</span>
+                    <strong style="color:#f0883e;">Funcional</strong>
+                </div>
+                <p style="font-size:0.82rem;color:#8b949e;margin:0;">Funções puras, imutabilidade, sem efeitos colaterais. Recursão no lugar de laços. Exemplos: <em>LISP, Haskell, Scala</em></p>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(247,129,102,0.3);border-radius:12px;padding:1.2rem;">
+                <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
+                    <span style="font-size:1.4rem;">🔗</span>
+                    <strong style="color:#f78166;">Lógico</strong>
+                </div>
+                <p style="font-size:0.82rem;color:#8b949e;margin:0;">Fatos e regras de inferência lógica. Dedução automática de soluções. Exemplo: <em>Prolog</em> (IA simbólica)</p>
+            </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem;margin-top:0.8rem;display:flex;align-items:center;gap:1rem;" class="reveal">
+            <span style="font-size:1.4rem;">📜</span>
+            <div>
+                <strong style="color:#a5d6ff;font-size:0.9rem;">Script / Dinâmico</strong>
+                <p style="font-size:0.8rem;color:#8b949e;margin:0;">Tipagem dinâmica, interpretado, alta produtividade. Trade-off: performance. Exemplos: <em>Python, Ruby, JavaScript</em> — dominam automação e IA</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 5: COMPARAÇÃO TÉCNICA -->
+<div class="slide" data-slide="5">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:400px;height:400px;top:-80px;left:-60px;background:#58a6ff;opacity:0.07;"></div>
+        <div class="blob" style="width:300px;height:300px;bottom:-60px;right:-40px;background:#f78166;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#58a6ff;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Comparação Técnica</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.5rem,2.8vw,2.2rem);font-weight:700;margin-bottom:1rem;" class="reveal">COBOL × C × Java × Python × Rust</h2>
+        <div style="overflow:hidden;border-radius:12px;border:1px solid rgba(255,255,255,0.08);font-size:0.78rem;" class="reveal">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="background:rgba(88,166,255,0.1);">
+                        <th style="padding:0.6rem 0.8rem;text-align:left;color:#79c0ff;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.08);">Critério</th>
+                        <th style="padding:0.6rem 0.5rem;text-align:center;color:#8b949e;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.08);">COBOL</th>
+                        <th style="padding:0.6rem 0.5rem;text-align:center;color:#8b949e;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.08);">C</th>
+                        <th style="padding:0.6rem 0.5rem;text-align:center;color:#8b949e;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.08);">Java</th>
+                        <th style="padding:0.6rem 0.5rem;text-align:center;color:#8b949e;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.08);">Python</th>
+                        <th style="padding:0.6rem 0.5rem;text-align:center;color:#f78166;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.08);">Rust</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <td style="padding:0.55rem 0.8rem;color:#79c0ff;font-weight:500;">Segurança memória</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🟢 Alta</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🔴 Baixa</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🟢 Alta (GC)</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🟢 Alta (GC)</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;color:#f78166;font-weight:700;">🟢 Máxima</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);">
+                        <td style="padding:0.55rem 0.8rem;color:#79c0ff;font-weight:500;">Performance</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🟡 Alta (batch)</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;font-weight:700;color:#58a6ff;">🟢 Muito alta</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🟢 Alta (JIT)</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🔴 Baixa</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;color:#f78166;font-weight:700;">🟢 Muito alta</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <td style="padding:0.55rem 0.8rem;color:#79c0ff;font-weight:500;">Curva aprendizado</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🔴 Alta</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🔴 Alta</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🟡 Média</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🟢 Baixa</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;">🔴 Muito alta</td>
+                    </tr>
+                    <tr style="background:rgba(255,255,255,0.02);">
+                        <td style="padding:0.55rem 0.8rem;color:#79c0ff;font-weight:500;">Ecossistema atual</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;font-size:0.72rem;">Bancos/Gov. legado</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;font-size:0.72rem;">OS, embarcados</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;font-size:0.72rem;">Corporativo, Android</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;font-size:0.72rem;">IA, dados, web</td>
+                        <td style="padding:0.55rem 0.5rem;text-align:center;font-size:0.72rem;color:#f78166;">Sistemas, WebAssembly</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;margin-top:0.8rem;" class="reveal">
+            <div style="background:rgba(88,166,255,0.08);border-radius:8px;padding:0.7rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:900;color:#58a6ff;" data-count="30000" data-suffix=" TPS">0</div>
+                <div style="font-size:0.7rem;color:#6e7681;">Rust (throughput)</div>
+            </div>
+            <div style="background:rgba(121,192,255,0.08);border-radius:8px;padding:0.7rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:900;color:#79c0ff;" data-count="15000" data-suffix=" TPS">0</div>
+                <div style="font-size:0.7rem;color:#6e7681;">Go (throughput)</div>
+            </div>
+            <div style="background:rgba(247,129,102,0.08);border-radius:8px;padding:0.7rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:900;color:#f78166;" data-count="1500" data-suffix=" TPS">0</div>
+                <div style="font-size:0.7rem;color:#6e7681;">Python (throughput)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 6: ESTUDO DE CASO SOCIAL -->
+<div class="slide" data-slide="6">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:450px;height:450px;top:-100px;right:-80px;background:#f78166;opacity:0.09;"></div>
+        <div class="blob" style="width:300px;height:300px;bottom:-60px;left:-40px;background:#58a6ff;opacity:0.06;"></div>
+    </div>
+    <canvas class="particle-canvas-ambient" style="position:absolute;inset:0;z-index:1;"></canvas>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#f78166;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Tecnologia & Sociedade</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.5rem,2.8vw,2.2rem);font-weight:700;margin-bottom:1rem;" class="reveal">Estudo de Caso: Do COBOL ao Cloud</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="reveal">
+            <div>
+                <div style="background:rgba(247,129,102,0.1);border:1px solid rgba(247,129,102,0.2);border-radius:12px;padding:1.2rem;margin-bottom:0.8rem;">
+                    <div style="font-size:0.8rem;color:#f78166;font-weight:600;margin-bottom:0.4rem;">🏦 O desafio bancário</div>
+                    <p style="font-size:0.82rem;color:#8b949e;margin:0;"><strong style="color:#e6edf3;">95%</strong> das transações em ATMs e <strong style="color:#e6edf3;">80%</strong> das operações com cartão de crédito no mundo ainda rodam em COBOL. Bradesco, Itaú e Banco do Brasil têm mainframes IBM com milhões de linhas de COBOL acumuladas há décadas.</p>
+                </div>
+                <div style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.15);border-radius:12px;padding:1.2rem;">
+                    <div style="font-size:0.8rem;color:#58a6ff;font-weight:600;margin-bottom:0.4rem;">🔄 Migração no Brasil</div>
+                    <p style="font-size:0.82rem;color:#8b949e;margin:0;">Uma cooperativa financeira nacional migrou de COBOL para Java com apoio de consultoria. Caso global: <strong style="color:#e6edf3;">~1.000.000 linhas</strong> de COBOL convertidas, <strong style="color:#e6edf3;">400+ tabelas Oracle</strong>, anos de trabalho especializado.</p>
+                </div>
+            </div>
+            <div>
+                <div style="font-size:0.82rem;color:#8b949e;margin-bottom:0.8rem;font-weight:500;color:#e6edf3;">Por que não migrar tudo de uma vez?</div>
+                <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                        <span style="color:#f78166;font-size:1rem;flex-shrink:0;">⚠️</span>
+                        <div style="font-size:0.8rem;color:#8b949e;"><strong style="color:#e6edf3;">Confiabilidade:</strong> COBOL processou bilhões de transações por décadas sem falhar</div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                        <span style="color:#f78166;font-size:1rem;flex-shrink:0;">💰</span>
+                        <div style="font-size:0.8rem;color:#8b949e;"><strong style="color:#e6edf3;">Custo:</strong> Reescrita total de sistemas críticos é extremamente cara e arriscada</div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                        <span style="color:#f78166;font-size:1rem;flex-shrink:0;">👨‍💻</span>
+                        <div style="font-size:0.8rem;color:#8b949e;"><strong style="color:#e6edf3;">Escassez de talento:</strong> Poucos programadores COBOL + falta de contexto de negócio nos novos devs</div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                        <span style="color:#f78166;font-size:1rem;flex-shrink:0;">📋</span>
+                        <div style="font-size:0.8rem;color:#8b949e;"><strong style="color:#e6edf3;">Regulação:</strong> Bancos regulados — qualquer mudança requer validação extensiva pelo Bacen</div>
+                    </div>
+                </div>
+                <div style="background:rgba(88,166,255,0.06);border-radius:8px;padding:0.8rem;margin-top:0.8rem;font-size:0.78rem;color:#79c0ff;">
+                    💡 Mercado dual: alta demanda por COBOL seniores (salários altos pela escassez) + alta demanda por arquitetos de modernização
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 7: LGPD E MARCO CIVIL -->
+<div class="slide" data-slide="7">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:400px;height:400px;top:-80px;left:-60px;background:#58a6ff;opacity:0.07;"></div>
+        <div class="blob" style="width:280px;height:280px;bottom:-50px;right:-30px;background:#f78166;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#58a6ff;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Marcos Legais</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.5rem,2.8vw,2.2rem);font-weight:700;margin-bottom:1.2rem;" class="reveal">LGPD & Marco Civil da Internet</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;" class="reveal">
+            <div style="background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:14px;padding:1.4rem;">
+                <div style="font-size:1.4rem;margin-bottom:0.5rem;">⚖️</div>
+                <div style="font-weight:700;font-size:0.95rem;color:#58a6ff;margin-bottom:0.3rem;">Marco Civil da Internet</div>
+                <div style="font-size:0.75rem;color:#6e7681;margin-bottom:0.7rem;">Lei nº 12.965 · 2014</div>
+                <ul style="font-size:0.8rem;color:#8b949e;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.4rem;">
+                    <li>✓ Princípios e direitos para uso da internet</li>
+                    <li>✓ Responsabilidade de provedores por conteúdo de terceiros</li>
+                    <li>✓ Neutralidade de rede</li>
+                    <li>✓ Base para proteção digital no Brasil</li>
+                </ul>
+            </div>
+            <div style="background:rgba(247,129,102,0.07);border:1px solid rgba(247,129,102,0.2);border-radius:14px;padding:1.4rem;">
+                <div style="font-size:1.4rem;margin-bottom:0.5rem;">🛡️</div>
+                <div style="font-weight:700;font-size:0.95rem;color:#f78166;margin-bottom:0.3rem;">LGPD</div>
+                <div style="font-size:0.75rem;color:#6e7681;margin-bottom:0.7rem;">Lei nº 13.709 · 2018</div>
+                <ul style="font-size:0.8rem;color:#8b949e;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.4rem;">
+                    <li>✓ Consentimento explícito para coleta de dados</li>
+                    <li>✓ Direito de exclusão e portabilidade de dados</li>
+                    <li>✓ Notificação obrigatória de vazamentos</li>
+                    <li>✓ Inspirada no GDPR europeu</li>
+                </ul>
+            </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem;margin-top:1rem;" class="reveal">
+            <div style="font-size:0.82rem;color:#e6edf3;font-weight:600;margin-bottom:0.4rem;">🔧 Impacto técnico nas linguagens e sistemas</div>
+            <p style="font-size:0.78rem;color:#8b949e;margin:0;">A LGPD impôs mudanças concretas: criptografia de dados sensíveis, logs de auditoria, APIs de exportação/exclusão, anonimização. Isso aumentou a demanda por <strong style="color:#79c0ff;">Java e Python</strong> no mercado corporativo — linguagens com ecossistemas maduros de segurança e conformidade.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 8: ANÁLISE CRÍTICA -->
+<div class="slide" data-slide="8">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:500px;height:500px;top:-120px;right:-100px;background:#58a6ff;opacity:0.08;"></div>
+        <div class="blob" style="width:350px;height:350px;bottom:-80px;left:-60px;background:#f78166;opacity:0.07;"></div>
+    </div>
+    <canvas class="particle-canvas-ambient" style="position:absolute;inset:0;z-index:1;"></canvas>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#f78166;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Análise Crítica</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.5rem,2.8vw,2.2rem);font-weight:700;margin-bottom:1.2rem;" class="reveal">Trade-offs, Riscos e Tendências</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="reveal">
+            <div>
+                <div style="font-size:0.8rem;font-weight:600;color:#79c0ff;margin-bottom:0.7rem;letter-spacing:1px;text-transform:uppercase;">⚡ Trade-offs Históricos</div>
+                <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                    <div style="border-left:3px solid #58a6ff;padding-left:0.8rem;font-size:0.8rem;color:#8b949e;"><strong style="color:#e6edf3;">Performance vs. Segurança:</strong> C entrega desempenho máximo mas gerou décadas de vulnerabilidades (buffer overflow, etc.)</div>
+                    <div style="border-left:3px solid #79c0ff;padding-left:0.8rem;font-size:0.8rem;color:#8b949e;"><strong style="color:#e6edf3;">Produtividade vs. Performance:</strong> Python é até 20× mais lento que C — mas suas bibliotecas (NumPy, TensorFlow) são escritas em C por baixo</div>
+                    <div style="border-left:3px solid #f0883e;padding-left:0.8rem;font-size:0.8rem;color:#8b949e;"><strong style="color:#e6edf3;">Portabilidade vs. Controle:</strong> JVM do Java promete "write once run anywhere" ao custo de overhead de memória</div>
+                </div>
+            </div>
+            <div>
+                <div style="font-size:0.8rem;font-weight:600;color:#f78166;margin-bottom:0.7rem;letter-spacing:1px;text-transform:uppercase;">⚠️ Riscos Emergentes</div>
+                <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                    <div style="background:rgba(247,129,102,0.08);border-radius:8px;padding:0.7rem;font-size:0.78rem;color:#8b949e;">
+                        <strong style="color:#f78166;">🎯 Viés algorítmico:</strong> Sistemas de crédito e reconhecimento facial podem amplificar desigualdades raciais no Brasil
+                    </div>
+                    <div style="background:rgba(247,129,102,0.08);border-radius:8px;padding:0.7rem;font-size:0.78rem;color:#8b949e;">
+                        <strong style="color:#f0883e;">🔒 Supply chain:</strong> Incidente log4j (2021) — uma lib Java comprometeu milhares de sistemas globais
+                    </div>
+                    <div style="background:rgba(247,129,102,0.08);border-radius:8px;padding:0.7rem;font-size:0.78rem;color:#8b949e;">
+                        <strong style="color:#e6edf3;">☁️ Vendor lock-in:</strong> Python "open source" rodando no SageMaker da AWS não é verdadeiramente portável
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-top:0.8rem;" class="reveal">
+            <div style="background:rgba(88,166,255,0.07);border-radius:8px;padding:0.8rem;">
+                <div style="font-size:0.78rem;font-weight:600;color:#58a6ff;margin-bottom:0.3rem;">✅ Tendências sólidas</div>
+                <div style="font-size:0.76rem;color:#8b949e;">Rust para sistemas críticos · Go para microsserviços · Python para IA/ML · TypeScript sobre JS</div>
+            </div>
+            <div style="background:rgba(247,129,102,0.07);border-radius:8px;padding:0.8rem;">
+                <div style="font-size:0.78rem;font-weight:600;color:#f78166;margin-bottom:0.3rem;">⚡ Hype com cautela</div>
+                <div style="font-size:0.76rem;color:#8b949e;">"Qualquer linguagem faz tudo" · "COBOL vai morrer" (errado desde 1980!) · Nova linguagem como solução completa</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 9: SÍNTESE E MERCADO BRASIL -->
+<div class="slide" data-slide="9">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:450px;height:450px;top:-100px;left:-80px;background:#58a6ff;opacity:0.08;"></div>
+        <div class="blob" style="width:300px;height:300px;bottom:-60px;right:-40px;background:#79c0ff;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#58a6ff;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Mercado de Trabalho</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.5rem,2.8vw,2.2rem);font-weight:700;margin-bottom:1.2rem;" class="reveal">Linguagens e Empregabilidade no Brasil</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;" class="reveal">
+            <div>
+                <div style="font-size:0.82rem;font-weight:600;color:#79c0ff;margin-bottom:0.8rem;">Participação nas vagas (SP, amostra)</div>
+                <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:0.25rem;"><span>PHP</span><span style="color:#58a6ff;">25,4%</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="75" style="background:linear-gradient(90deg,#58a6ff,#79c0ff);width:0%;"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:0.25rem;"><span>JavaScript</span><span style="color:#79c0ff;">22,7%</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="67" style="background:linear-gradient(90deg,#79c0ff,#a5d6ff);width:0%;"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:0.25rem;"><span>Java</span><span style="color:#f0883e;">~18%</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="53" style="background:linear-gradient(90deg,#f0883e,#f78166);width:0%;"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:0.25rem;"><span>Python</span><span style="color:#f78166;">~10%</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="30" style="background:linear-gradient(90deg,#f78166,#ffa68d);width:0%;"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:0.25rem;"><span>Go / Rust</span><span style="color:#6e7681;">&lt;5%</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="12" style="background:linear-gradient(90deg,#6e7681,#8b949e);width:0%;"></div></div>
+                    </div>
+                </div>
+                <div style="font-size:0.72rem;color:#6e7681;margin-top:0.5rem;">Fonte: IFSP / DIO (São Paulo)</div>
+            </div>
+            <div>
+                <div style="display:flex;flex-direction:column;gap:0.7rem;">
+                    <div style="background:rgba(247,129,102,0.1);border:1px solid rgba(247,129,102,0.2);border-radius:10px;padding:1rem;text-align:center;">
+                        <div style="font-size:2.2rem;font-weight:900;color:#f78166;" data-count="530000" data-suffix="+">0</div>
+                        <div style="font-size:0.75rem;color:#8b949e;">Déficit profissionais de TI no Brasil até 2026</div>
+                        <div style="font-size:0.7rem;color:#6e7681;">(Brasscom)</div>
+                    </div>
+                    <div style="background:rgba(88,166,255,0.07);border-radius:10px;padding:0.9rem;">
+                        <div style="font-size:0.8rem;font-weight:600;color:#58a6ff;margin-bottom:0.3rem;">Mercado dual</div>
+                        <p style="font-size:0.76rem;color:#8b949e;margin:0;">Alta demanda por especialistas em COBOL/sistemas legados (salários elevados pela escassez) + crescimento acelerado em Python/IA e Go/microsserviços</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 10: CONCLUSÃO -->
+<div class="slide" data-slide="10">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:500px;height:500px;top:-120px;right:-100px;background:#58a6ff;opacity:0.13;"></div>
+        <div class="blob" style="width:350px;height:350px;bottom:-80px;left:-60px;background:#f78166;opacity:0.10;"></div>
+        <div class="blob" style="width:220px;height:220px;top:40%;left:40%;background:#79c0ff;opacity:0.08;"></div>
+    </div>
+    <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+    <div class="content">
+        <div style="font-size:0.75rem;color:#58a6ff;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.5rem;" class="reveal">Conclusão</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.6rem);font-weight:700;margin-bottom:1.2rem;line-height:1.2;" class="reveal">Síntese: o que aprendemos?</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.9rem;margin-bottom:1rem;" class="reveal">
+            <div style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:12px;padding:1.1rem;text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:0.4rem;">⚙️</div>
+                <div style="font-size:0.8rem;font-weight:700;color:#58a6ff;margin-bottom:0.3rem;">Técnica</div>
+                <div style="font-size:0.75rem;color:#8b949e;">Os trade-offs não somem — migram. Cada linguagem resolve problemas e cria novos.</div>
+            </div>
+            <div style="background:rgba(121,192,255,0.08);border:1px solid rgba(121,192,255,0.2);border-radius:12px;padding:1.1rem;text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:0.4rem;">💼</div>
+                <div style="font-size:0.8rem;font-weight:700;color:#79c0ff;margin-bottom:0.3rem;">Econômica</div>
+                <div style="font-size:0.75rem;color:#8b949e;">Novas linguagens não destroem as anteriores de imediato. COBOL (1960) ainda processa trilhões.</div>
+            </div>
+            <div style="background:rgba(247,129,102,0.08);border:1px solid rgba(247,129,102,0.2);border-radius:12px;padding:1.1rem;text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:0.4rem;">🌎</div>
+                <div style="font-size:0.8rem;font-weight:700;color:#f78166;margin-bottom:0.3rem;">Social</div>
+                <div style="font-size:0.75rem;color:#8b949e;">Riscos como viés algorítmico são problemas de governança — não apenas de linguagem.</div>
+            </div>
+        </div>
+        <div style="background:rgba(88,166,255,0.07);border-left:4px solid #58a6ff;border-radius:8px;padding:1rem 1.2rem;" class="reveal">
+            <div style="font-size:0.82rem;font-weight:600;color:#79c0ff;margin-bottom:0.3rem;">Recomendações</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.78rem;color:#8b949e;">
+                <div>📚 <strong style="color:#e6edf3;">Estudantes:</strong> Python + Go/Rust + entender COBOL para sistemas financeiros</div>
+                <div>🎓 <strong style="color:#e6edf3;">Instituições:</strong> Diversificar ensino além de OOP em Java</div>
+                <div>🏢 <strong style="color:#e6edf3;">Organizações:</strong> Modernização gradual + conformidade LGPD</div>
+                <div>🏛️ <strong style="color:#e6edf3;">Setor público:</strong> Reduzir déficit de 530 mil profissionais de TI</div>
+            </div>
+        </div>
+        <p style="text-align:center;font-size:0.75rem;color:#6e7681;margin-top:1rem;" class="reveal">Fontes: Brasscom · Wikipedia · DIO · IFSP · Brasil247 · GFT · Xenoss.io · Legislação Federal Brasileira</p>
+    </div>
+</div>
+
+</div>
+
+<!-- NAVEGAÇÃO -->
+<div class="nav-controls">
+    <button class="nav-btn" onclick="changeSlide(-1)">&#8249;</button>
+    <div class="slide-dots" id="dots"></div>
+    <button class="nav-btn" onclick="changeSlide(1)">&#8250;</button>
+    <span class="slide-counter" id="counter">1 / 10</span>
+</div>
+
+<script>
+    let current = 1;
+    const total = document.querySelectorAll('.slide').length;
+    const dotsContainer = document.getElementById('dots');
+    const counter = document.getElementById('counter');
+    for (let i = 1; i <= total; i++) { const dot = document.createElement('div'); dot.className = 'dot' + (i === 1 ? ' active' : ''); dot.onclick = () => goToSlide(i); dotsContainer.appendChild(dot); }
+    function goToSlide(n) {
+        const prev = document.querySelector('.slide.active');
+        const next = document.querySelector(`.slide[data-slide="${n}"]`);
+        if (prev) prev.classList.remove('active');
+        if (next) { next.classList.add('active'); animateSlide(next); }
+        current = n; updateNav();
+    }
+    function changeSlide(dir) { let next = current + dir; if (next < 1) next = total; if (next > total) next = 1; goToSlide(next); }
+    function updateNav() { document.querySelectorAll('.dot').forEach((d, i) => { d.classList.toggle('active', i + 1 === current); }); counter.textContent = current + ' / ' + total; }
+    document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); changeSlide(1); } if (e.key === 'ArrowLeft') { e.preventDefault(); changeSlide(-1); } });
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', (e) => { const diff = touchStartX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) changeSlide(diff > 0 ? 1 : -1); });
+
+    function animateSlide(slide) {
+        slide.querySelectorAll('.reveal').forEach((el, i) => {
+            el.style.transition = 'none'; el.style.opacity = '0'; el.style.transform = 'translateY(20px)';
+            el.offsetHeight;
+            const delay = i * 0.08;
+            el.style.transition = `opacity 0.35s ease ${delay}s, transform 0.35s ease ${delay}s`;
+            el.style.opacity = '1'; el.style.transform = 'translateY(0px)';
+        });
+        animateSlideEffects(slide);
+    }
+
+    function animateSlideEffects(slide) {
+        slide.querySelectorAll('[data-count]:not(.counted)').forEach(el => {
+            el.classList.add('counted');
+            const target = parseInt(el.dataset.count);
+            const suffix = el.dataset.suffix || '';
+            let cur = 0; const step = target / 50;
+            const timer = setInterval(() => { cur += step; if (cur >= target) { cur = target; clearInterval(timer); } el.textContent = Math.round(cur).toLocaleString('pt-BR') + suffix; }, 25);
+        });
+        slide.querySelectorAll('.bar-fill:not(.fill-init)').forEach((bar, i) => {
+            bar.classList.add('fill-init');
+            bar.style.width = '0%'; bar.style.transition = `width 0.7s ease ${i * 0.1}s`; bar.offsetHeight; bar.style.width = bar.dataset.width + '%';
+        });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        const spotlight = document.querySelector('.mouse-spotlight');
+        if (spotlight) spotlight.style.background = `radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(88,166,255,0.05), transparent 40%)`;
+    });
+
+    window.initParticles = function(canvas, options) {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+        const interactive = options.interactive !== false;
+        const count = options.count || (interactive ? 55 : 18);
+        let mx = -1000, my = -1000;
+        const particles = Array.from({ length: count }, () => ({
+            x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+            size: Math.random() * 2.5 + 0.8, alpha: Math.random() * 0.3 + 0.08
+        }));
+        if (interactive) {
+            canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); mx = e.clientX - rect.left; my = e.clientY - rect.top; });
+            canvas.addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+        }
+        (function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                if (interactive) { const dx = p.x - mx, dy = p.y - my, dist = Math.sqrt(dx*dx+dy*dy); if (dist < 120) { const force = (120-dist)/120*2; p.vx += (dx/dist)*force*0.1; p.vy += (dy/dist)*force*0.1; } }
+                p.vx *= 0.98; p.vy *= 0.98; p.x += p.vx; p.y += p.vy;
+                if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(88,166,255,${p.alpha})`; ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        })();
+    };
+    document.querySelectorAll('.particle-canvas').forEach(c => window.initParticles(c, { interactive: true, count: 55 }));
+    document.querySelectorAll('.particle-canvas-ambient').forEach(c => window.initParticles(c, { interactive: false, count: 18 }));
+
+    try { animateSlide(document.querySelector('.slide.active')); } catch(e) {}
+</script>
+</body>
+</html>
